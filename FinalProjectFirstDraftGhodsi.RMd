@@ -1,0 +1,28 @@
+---
+title: "Final Project - First Draft"
+author: "Seyed Hamed Ghodsi"
+date: "Deadline: November 8, 2018"
+output: html_document
+---
+
+***
+# Inroduction
+
+ This project provides documentation for the analysis of an anonymos city sewer collection system model. The purpose of this report is to provide the interpretation of **SWMM** (Stormwater Management Model) output files. The SWMM model has provided two output files. The first one is a report file (".rpt") which include the all cumulative results from the simulation model. The second one is a binary file (".out") which include the time series analysis of different elements of the model like subcatchments, nodes and links.  
+
+
+
+
+
+
+
+ 
+
+***  
+
+# Data
+
+
+
+
+# 
