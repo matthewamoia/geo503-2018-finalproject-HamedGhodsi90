@@ -10,11 +10,187 @@ output: html_document
 
 This project provides documentation for the analysis of an anonymous city sewer collection system. The purpose of this report is to provide the interpretation of **SWMM** output files.  
 EPA's Stormwater Management Model (SWMM) is used for single event or long-term simulations of water runoff quantity and quality in primarily urban areas–although there are also many applications that can be used for drainage systems in non-urban areas. It is used throughout the world for planning, analysis, and design related to stormwater runoff, combined and sanitary sewers, and other drainage systems.  
-The SWMM output would be made in two files. The first one is a report file (".rpt") which includes all the cumulative results from the simulation model such as runoff and outfall loading summary. The second one is a binary file (".out") which include the time series analysis of different elements of the model like subcatchments, nodes and links. Usually researchers use SWMM software interface to analyze the time series result, which is stored in the binary file. However, in this report the analysis would be done using `R`. As a result, Therefore, the result would be analyzed and showed in two separated parts.  
+The SWMM output would be made in two files. The first one is a report file (".rpt") which includes all the cumulative results from the simulation model such as runoff and outfall loading summary. The second one is a binary file (".out") which include the time series analysis of different elements of the model like subcatchments, nodes and links. Usually researchers use SWMM software interface to analyze the time series result, which is stored in the binary file. However, in this report the analysis would be done using `R`. As a result, the simulation model results would be analyzed and showed in two separated parts. It should be noted that to get the output files, the input file was run manually through the SWMM model interface.
 
 ***  
 
-# Data
+# Data Analysis  
+
+## Report Data  
+
+
+The report file which would be used as a data set in this project, has been uploaded in [github](https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt). This file shows the SWMM output as a report file. 
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra"))
+
+library(dplyr)
+library(swmmr)
+library(devtools)
+library(purrr)
+library(knitr)
+library(gridExtra)
+library(grid)
+
+```
+
+``` {r echo = FALSE}
+#.......................Needed Functions ....................
+percent_Function <- function(xp, digits = 2, format = "f", ...) {
+  paste0(formatC(100 * xp, format = format, digits = digits, ...), "%")
+}
+
+
+tt3 <- ttheme_minimal(
+  core=list(bg_params = list(fill = blues9[1:2], col=NA),
+            fg_params=list(fontface=3)),
+  colhead=list(fg_params=list(col="navyblue", fontface=4L)),
+  rowhead=list(fg_params=list(col="orange", fontface=3L)))
+
+```
+
+With the following lines of `R` code, the input file could be readable. The first line, would download the data set from [github](https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt). I made this line as a comment. Because just for the first time it is needed to be downloaded. The rest of the time, the file is in the current folder and can be read easily. Therefore, it is not needed to download it again. For the users who want to run this model for the first time, they should run this line (remove the #) 
+
+```{r error=FALSE, message=FALSE, warning=FALSE}
+
+download.file("https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt", "Report_file.rpt")
+
+report_file <- read_rpt ("Report_file.rpt")
+
+```
+
+The report file has different sections which are:
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
+
+grid.table(matrix(names(report_file[1:16]), nrow = 6), theme=tt3) 
+
+```
+
+``` {r echo=FALSE}  
+#.................. ...subcatchment analysis..............................
+
+# subcatchment summary
+
+rpt_subcatchment_pre <- report_file $ subcatchment_summary %>% filter(between(row_number(), 1, 59724))
+rpt_subcatchment_pre [9683,2] = 16324    ; rpt_subcatchment_pre [9683,3] = 1632400 ;
+rpt_subcatchment_pre [9683,4] = 20       ; rpt_subcatchment_pre [9683,5] = 1.65 ;
+rpt_subcatchment_pre [9683,6] = "1993TY" ; rpt_subcatchment_pre [9683,7] = "ECSD4_InfStor"
+rpt_subcatchment_pre $ Area <- as.numeric(as.character(rpt_subcatchment_pre $ Area))
+rpt_subcatchment_pre $ Width <- as.numeric(as.character(rpt_subcatchment_pre $ Width))
+rpt_subcatchment_pre $ Perc_Imperv <- as.numeric(as.character(rpt_subcatchment_pre $ Perc_Imperv))
+rpt_subcatchment_pre $ Perc_Slope <- as.numeric(as.character(rpt_subcatchment_pre $ Perc_Slope))
+
+rpt_subcatchment <- rpt_subcatchment_pre  %>% arrange(desc(Area))
+
+
+#Subcatchment Runoff summary
+
+rpt_Runoff_subcatchment_pre <- report_file $ subcatchment_runoff_summary %>% filter(between(row_number(), 1, 59655)) 
+rpt_Runoff_subcatchment_pre $ Total_Precip <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Precip))
+rpt_Runoff_subcatchment_pre $ Total_Runon <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Runon))
+rpt_Runoff_subcatchment_pre $ Total_Evap <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Evap))
+rpt_Runoff_subcatchment_pre $ Total_Infil <- as.numeric(as.character(rpt_Runoff_subcatchment_pre$ Total_Infil))
+rpt_Runoff_subcatchment_pre $ Total_Runoff_Depth <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Runoff_Depth))
+rpt_Runoff_subcatchment_pre $ Total_Runoff_Volume <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Runoff_Volume))
+rpt_Runoff_subcatchment_pre $ Total_Peak_Runoff <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Peak_Runoff))
+rpt_Runoff_subcatchment_pre $ Total_Runoff_Coeff <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Runoff_Coeff))
+
+rpt_Runoff_subcatchment <- rpt_Runoff_subcatchment_pre %>% arrange (desc(Total_Runoff_Volume))
+
+
+# Subcatchment Summarize
+
+rpt_subcatchment_summary <- rpt_subcatchment %>% mutate(Subcatchment=Name) %>% 
+  select(Subcatchment, Area, Width, Perc_Imperv, Outlet) %>%
+    inner_join(rpt_Runoff_subcatchment, by=c("Subcatchment")) %>% 
+      mutate(Runoff_Volume_perc = percent_Function(Total_Runoff_Volume/sum(Total_Runoff_Volume, na.rm=TRUE)), 
+             Runoff_Depth_perc = percent_Function(Total_Runoff_Depth/sum(Total_Runoff_Depth))) %>%
+        select(Subcatchment, Area,Total_Runoff_Depth,Runoff_Depth_perc, Total_Runoff_Volume,Runoff_Volume_perc) %>%
+          arrange(desc(Total_Runoff_Volume))
+
+rpt_subcatchment_summarize <- summarise (rpt_subcatchment_summary, 
+                                         Sum_Runoff_Volume_MG = sum(Total_Runoff_Volume), 
+                                         Sum_Runoff_Depth_inch = sum(Total_Runoff_Depth)
+                                         )
+
+
+rpt_sub_top_Area <- rpt_subcatchment_summary  %>% 
+  arrange(desc(Area)) %>% 
+    select(Subcatchment, Area) %>% 
+      filter(between(row_number(), 1, 10))
+
+rpt_sub_top_vol <- rpt_subcatchment_summary  %>% 
+  arrange(desc(Total_Runoff_Volume)) %>% 
+    select(Subcatchment, Total_Runoff_Volume, Runoff_Volume_perc) %>% 
+      filter(between(row_number(), 1, 7))
+
+rpt_sub_top_Dep <- rpt_subcatchment_summary  %>% 
+  arrange(desc(Total_Runoff_Depth)) %>%
+    select(Subcatchment, Total_Runoff_Depth, Runoff_Depth_perc) %>% 
+      filter(between(row_number(), 1, 7))
+
+
+```
+
+The two most important sections, which have to be analyzed in the stormwater management process, are subcatchments and outfalls.   
+There are **`r nrow(rpt_Runoff_subcatchment)`** subcatchments in the watershed.
+The subcatchments have been arranged based on the area, total runoff volume and total runoff depth, which are shown in the following tables.  
+
+``` {r echo = FALSE} 
+grid.table(rpt_sub_top_Area, theme=tt3) 
+ 
+grid.arrange( tableGrob(rpt_sub_top_vol, theme=tt3),
+              tableGrob(rpt_sub_top_Dep, theme=tt3))
+
+```
+
+To know the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (**LID**) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Binary Data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
