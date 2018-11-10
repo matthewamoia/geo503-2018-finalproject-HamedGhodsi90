@@ -1,7 +1,7 @@
 ---
 title: "Final Project - First Draft"
 author: "Seyed Hamed Ghodsi (seyedham@buffalo.edu)"
-date: "Deadline: November 8, 2018"
+date: "Deadline: November 9, 2018"
 output: html_document
 ---
 
@@ -10,7 +10,7 @@ output: html_document
 
 This project provides documentation for the analysis of an anonymous city sewer collection system. The purpose of this report is to provide the interpretation of **SWMM** output files.  
 EPA's Stormwater Management Model (SWMM) is used for single event or long-term simulations of water runoff quantity and quality in primarily urban areas–although there are also many applications that can be used for drainage systems in non-urban areas. It is used throughout the world for planning, analysis, and design related to stormwater runoff, combined and sanitary sewers, and other drainage systems.  
-The SWMM output would be made in two files. The first one is a report file (".rpt") which includes all the cumulative results from the simulation model such as runoff and outfall loading summary. The second one is a binary file (".out") which include the time series analysis of different elements of the model like subcatchments, nodes and links. Usually researchers use SWMM software interface to analyze the time series result, which is stored in the binary file. However, in this report the analysis would be done using `R`. As a result, the simulation model results would be analyzed and showed in two separated parts. It should be noted that to get the output files, the input file was run manually through the SWMM model interface.
+The SWMM output would be made in two files. The first one is a report file (*".rpt"*) which includes all the cumulative results from the simulation model such as runoff and outfall loading summary. The second one is a binary file (*".out"*) which include the time series analysis of different elements of the model like subcatchments, nodes and links. Usually researchers use SWMM software interface to analyze the time series result, which is stored in the binary file. However, in this report the analysis would be done using `R`. As a result, the simulation model results would be analyzed and showed in two separated parts. It should be noted that to get the output files, the input file was run manually through the SWMM model interface.
 
 ***  
 
@@ -22,7 +22,7 @@ The SWMM output would be made in two files. The first one is a report file (".rp
 The report file which would be used as a data set in this project, has been uploaded in [github](https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt). This file shows the SWMM output as a report file. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-# install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra"))
+install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra","ggplot2"))
 
 library(dplyr)
 library(swmmr)
@@ -31,7 +31,7 @@ library(purrr)
 library(knitr)
 library(gridExtra)
 library(grid)
-
+library(ggplot2)
 ```
 
 ``` {r echo = FALSE}
@@ -63,14 +63,18 @@ The report file has different sections which are:
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
 
-grid.table(matrix(names(report_file[1:16]), nrow = 6), theme=tt3) 
+grid.table(matrix(names(report_file[1:15]), nrow = 5), theme=tt3) 
 
 ```
+
+The two most important sections, which have to be analyzed in the stormwater management process, are subcatchments and outfalls. 
+
+### Subcatchment analysis:
 
 ``` {r echo=FALSE}  
 #.................. ...subcatchment analysis..............................
 
-# subcatchment summary
+# subcatchment summary...........................................
 
 rpt_subcatchment_pre <- report_file $ subcatchment_summary %>% filter(between(row_number(), 1, 59724))
 rpt_subcatchment_pre [9683,2] = 16324    ; rpt_subcatchment_pre [9683,3] = 1632400 ;
@@ -84,7 +88,7 @@ rpt_subcatchment_pre $ Perc_Slope <- as.numeric(as.character(rpt_subcatchment_pr
 rpt_subcatchment <- rpt_subcatchment_pre  %>% arrange(desc(Area))
 
 
-#Subcatchment Runoff summary
+#Subcatchment Runoff summary........................................
 
 rpt_Runoff_subcatchment_pre <- report_file $ subcatchment_runoff_summary %>% filter(between(row_number(), 1, 59655)) 
 rpt_Runoff_subcatchment_pre $ Total_Precip <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Precip))
@@ -99,53 +103,112 @@ rpt_Runoff_subcatchment_pre $ Total_Runoff_Coeff <- as.numeric(as.character(rpt_
 rpt_Runoff_subcatchment <- rpt_Runoff_subcatchment_pre %>% arrange (desc(Total_Runoff_Volume))
 
 
-# Subcatchment Summarize
+# Subcatchment Summarize.............................................
 
-rpt_subcatchment_summary <- rpt_subcatchment %>% mutate(Subcatchment=Name) %>% 
-  select(Subcatchment, Area, Width, Perc_Imperv, Outlet) %>%
-    inner_join(rpt_Runoff_subcatchment, by=c("Subcatchment")) %>% 
-      mutate(Runoff_Volume_perc = percent_Function(Total_Runoff_Volume/sum(Total_Runoff_Volume, na.rm=TRUE)), 
-             Runoff_Depth_perc = percent_Function(Total_Runoff_Depth/sum(Total_Runoff_Depth))) %>%
-        select(Subcatchment, Area,Total_Runoff_Depth,Runoff_Depth_perc, Total_Runoff_Volume,Runoff_Volume_perc) %>%
-          arrange(desc(Total_Runoff_Volume))
+rpt_subcatchment_summary <- rpt_subcatchment %>% 
+  mutate(Subcatchment=Name) %>% 
+    select(Subcatchment, Area, Width, Perc_Imperv, Outlet) %>%
+      inner_join(rpt_Runoff_subcatchment, by=c("Subcatchment")) %>% 
+        mutate(
+             Runoff_Volume_perc = percent_Function(Total_Runoff_Volume/sum(Total_Runoff_Volume, na.rm=TRUE)), 
+             Runoff_Depth_perc = percent_Function(Total_Runoff_Depth/sum(Total_Runoff_Depth)),
+             Area_perc = percent_Function(Area/sum(Area)),
+             Rank_Area = dense_rank(desc(Area)),
+             Rank_Dep = dense_rank(desc(Total_Runoff_Depth)),
+             Rank_Vol = dense_rank(desc(Total_Runoff_Volume))
+             ) %>%
+          select(
+                Subcatchment, 
+                Area, Area_perc, Rank_Area,
+                Total_Runoff_Depth,Runoff_Depth_perc, Rank_Dep,
+                Total_Runoff_Volume,Runoff_Volume_perc, Rank_Vol
+                ) %>%
+            arrange(desc(Total_Runoff_Volume))
 
+#......................................................
+rpt_sub_Vol_Area <- rpt_subcatchment_summary  %>% 
+  mutate(
+         "Runoff Volume (MG)"= Total_Runoff_Volume,
+         "%" = Runoff_Volume_perc,
+         "Area (hec)" = Area,
+         "Rank Area" = Rank_Area
+         ) %>%
+    select(Subcatchment,"Runoff Volume (MG)","%","Area (hec)","Rank Area")
+      
+rpt_sub_Vol_Area_top <- rpt_sub_Vol_Area %>%
+  filter(between(row_number(), 1, 15))
+
+#.....................................................
+rpt_sub_Dep_Area <- rpt_subcatchment_summary  %>% 
+  mutate(
+         "Runoff Depth (inch)"= Total_Runoff_Depth,
+         "%" = Runoff_Depth_perc,
+         "Area (hec)" = Area,
+          "Rank Area" = Rank_Area
+         ) %>%
+    arrange(desc(Total_Runoff_Depth)) %>%
+      select(Subcatchment, "Runoff Depth (inch)","%","Area (hec)","Rank Area")
+       
+rpt_sub_Dep_Area_top <- rpt_sub_Dep_Area %>% 
+  filter(between(row_number(), 1, 15))
+
+#.....................................................
+rpt_sub_Area_Vol <- rpt_subcatchment_summary  %>% 
+  mutate(
+    "Area (hec)" = Area,
+    "Area %" = Area_perc,
+    "Runoff Volume (MG)"= Total_Runoff_Volume,
+    "Vol %" = Runoff_Volume_perc,
+    "Rank Vol" = Rank_Vol
+  ) %>%
+  arrange(desc(Area)) %>%
+    select(Subcatchment,"Area (hec)","Area %", "Runoff Volume (MG)","Vol %")
+
+rpt_sub_Area_Vol_top <- rpt_sub_Area_Vol %>%
+  filter(between(row_number(), 1, 15))
+
+#....................................................................
 rpt_subcatchment_summarize <- summarise (rpt_subcatchment_summary, 
                                          Sum_Runoff_Volume_MG = sum(Total_Runoff_Volume), 
                                          Sum_Runoff_Depth_inch = sum(Total_Runoff_Depth)
                                          )
 
-
-rpt_sub_top_Area <- rpt_subcatchment_summary  %>% 
-  arrange(desc(Area)) %>% 
-    select(Subcatchment, Area) %>% 
-      filter(between(row_number(), 1, 10))
-
-rpt_sub_top_vol <- rpt_subcatchment_summary  %>% 
-  arrange(desc(Total_Runoff_Volume)) %>% 
-    select(Subcatchment, Total_Runoff_Volume, Runoff_Volume_perc) %>% 
-      filter(between(row_number(), 1, 7))
-
-rpt_sub_top_Dep <- rpt_subcatchment_summary  %>% 
-  arrange(desc(Total_Runoff_Depth)) %>%
-    select(Subcatchment, Total_Runoff_Depth, Runoff_Depth_perc) %>% 
-      filter(between(row_number(), 1, 7))
-
-
 ```
 
-The two most important sections, which have to be analyzed in the stormwater management process, are subcatchments and outfalls.   
-There are **`r nrow(rpt_Runoff_subcatchment)`** subcatchments in the watershed.
-The subcatchments have been arranged based on the area, total runoff volume and total runoff depth, which are shown in the following tables.  
+Number of subcatchments in the watershed: **`r nrow(rpt_Runoff_subcatchment)`**    
+The subcatchments have been arranged based on total runoff volume, total runoff depth, and area which the top ones are shown in the following tables.  
 
 ``` {r echo = FALSE} 
-grid.table(rpt_sub_top_Area, theme=tt3) 
- 
-grid.arrange( tableGrob(rpt_sub_top_vol, theme=tt3),
-              tableGrob(rpt_sub_top_Dep, theme=tt3))
-
+# To plot the tables ..............................................
+# grid.arrange(tableGrob(rpt_sub_top_Vol_Area, theme=tt3),
+#              tableGrob(rpt_sub_top_Dep, theme=tt3))
+grid.table(rpt_sub_Vol_Area_top, theme=tt3)  
+```
+``` {r echo = FALSE} 
+grid.table(rpt_sub_Dep_Area_top, theme=tt3)  
+```
+``` {r echo = FALSE}
+grid.table(rpt_sub_Area_Vol_top, theme=tt3)
 ```
 
-To know the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (**LID**) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.  
+Knowing the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (**LID**) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.  
+``` {r echo=FALSE}
+#...................................................
+rpt_sub_ups <- rpt_subcatchment_summary %>%
+  filter (Area > 2000) %>% arrange(desc(Area))
+rpt_sub_ups_num <- nrow(rpt_sub_ups)
+rpt_sub_ups_name <- matrix()
+for (i in 1:rpt_sub_ups_num)
+  rpt_sub_ups_name[i] <- rpt_sub_ups[[i,1]]
+```
+
+by looking at the the subcatchments's area, it could be realized that The first **`r rpt_sub_ups_num`** subcatchments' area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are:    
+**`r rpt_sub_ups_name[[1]]`,  `r rpt_sub_ups_name[[2]]`,  `r rpt_sub_ups_name[[3]]`,  `r rpt_sub_ups_name[[4]]`, and `r rpt_sub_ups_name[[5]]`**.   
+
+
+
+
+
 
 
 

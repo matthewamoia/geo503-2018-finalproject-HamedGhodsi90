@@ -305,7 +305,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Final Project - First Draft</h1>
 <h4 class="author"><em>Seyed Hamed Ghodsi (<a href="mailto:seyedham@buffalo.edu">seyedham@buffalo.edu</a>)</em></h4>
-<h4 class="date"><em>Deadline: November 8, 2018</em></h4>
+<h4 class="date"><em>Deadline: November 9, 2018</em></h4>
 
 </div>
 
@@ -315,7 +315,7 @@ div.tocify {
 <h1>Inroduction</h1>
 <p>This project provides documentation for the analysis of an anonymous city sewer collection system. The purpose of this report is to provide the interpretation of <strong>SWMM</strong> output files.<br />
 EPA’s Stormwater Management Model (SWMM) is used for single event or long-term simulations of water runoff quantity and quality in primarily urban areas–although there are also many applications that can be used for drainage systems in non-urban areas. It is used throughout the world for planning, analysis, and design related to stormwater runoff, combined and sanitary sewers, and other drainage systems.<br />
-The SWMM output would be made in two files. The first one is a report file (“.rpt”) which includes all the cumulative results from the simulation model such as runoff and outfall loading summary. The second one is a binary file (“.out”) which include the time series analysis of different elements of the model like subcatchments, nodes and links. Usually researchers use SWMM software interface to analyze the time series result, which is stored in the binary file. However, in this report the analysis would be done using <code>R</code>. As a result, the simulation model results would be analyzed and showed in two separated parts. It should be noted that to get the output files, the input file was run manually through the SWMM model interface.</p>
+The SWMM output would be made in two files. The first one is a report file (<em>“.rpt”</em>) which includes all the cumulative results from the simulation model such as runoff and outfall loading summary. The second one is a binary file (<em>“.out”</em>) which include the time series analysis of different elements of the model like subcatchments, nodes and links. Usually researchers use SWMM software interface to analyze the time series result, which is stored in the binary file. However, in this report the analysis would be done using <code>R</code>. As a result, the simulation model results would be analyzed and showed in two separated parts. It should be noted that to get the output files, the input file was run manually through the SWMM model interface.</p>
 <hr />
 </div>
 <div id="data-analysis" class="section level1">
@@ -324,15 +324,20 @@ The SWMM output would be made in two files. The first one is a report file (“.
 <h2>Report Data</h2>
 <p>The report file which would be used as a data set in this project, has been uploaded in <a href="https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt">github</a>. This file shows the SWMM output as a report file.</p>
 <p>With the following lines of <code>R</code> code, the input file could be readable. The first line, would download the data set from <a href="https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt">github</a>. I made this line as a comment. Because just for the first time it is needed to be downloaded. The rest of the time, the file is in the current folder and can be read easily. Therefore, it is not needed to download it again. For the users who want to run this model for the first time, they should run this line (remove the #)</p>
-<pre class="r"><code>download.file(&quot;https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt&quot;, &quot;Report_file.rpt&quot;)
+<pre class="r"><code># download.file(&quot;https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt&quot;, &quot;Report_file.rpt&quot;)
 
 report_file &lt;- read_rpt (&quot;Report_file.rpt&quot;)</code></pre>
 <p>The report file has different sections which are:</p>
 <p><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
-<p>The two most important sections, which have to be analyzed in the stormwater management process, are subcatchments and outfalls.<br />
-There are <strong>59655</strong> subcatchments in the watershed. The subcatchments have been arranged based on the area, total runoff volume and total runoff depth, which are shown in the following tables.</p>
-<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /><img src="index_files/figure-html/unnamed-chunk-6-2.png" width="672" /></p>
-<p>To know the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (<strong>LID</strong>) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.</p>
+<p>The two most important sections, which have to be analyzed in the stormwater management process, are subcatchments and outfalls.</p>
+<div id="subcatchment-analysis" class="section level3">
+<h3>Subcatchment analysis:</h3>
+<p>Number of subcatchments in the watershed: <strong>59655</strong><br />
+The subcatchments have been arranged based on total runoff volume, total runoff depth, and area which the top ones are shown in the following tables.</p>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /> <img src="index_files/figure-html/unnamed-chunk-7-1.png" width="672" /> <img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>Knowing the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (<strong>LID</strong>) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.</p>
+<p>by looking at the the subcatchments’s area, it could be realized that The first <strong>5</strong> subcatchments’ area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are: <strong>ECSD4, ScajaquadaWS, ECSD1_OSD, Cheektowaga5_OSD, and WSSD13_OSD</strong>.</p>
+</div>
 </div>
 <div id="binary-data" class="section level2">
 <h2>Binary Data</h2>
