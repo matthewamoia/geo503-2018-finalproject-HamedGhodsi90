@@ -336,7 +336,33 @@ report_file &lt;- read_rpt (&quot;Report_file.rpt&quot;)</code></pre>
 The subcatchments have been arranged based on total runoff volume, total runoff depth, and area which the top ones are shown in the following tables.</p>
 <p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /> <img src="index_files/figure-html/unnamed-chunk-7-1.png" width="672" /> <img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <p>Knowing the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (<strong>LID</strong>) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.</p>
-<p>by looking at the the subcatchments’s area, it could be realized that The first <strong>5</strong> subcatchments’ area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are: <strong>ECSD4, ScajaquadaWS, ECSD1_OSD, Cheektowaga5_OSD, and WSSD13_OSD</strong>.</p>
+<p>by looking at the the subcatchments’s area, it could be realized that The first <strong>5</strong> subcatchments’ area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are:<br />
+<strong>ECSD4, ScajaquadaWS, ECSD1_OSD, Cheektowaga5_OSD, and WSSD13_OSD</strong>.</p>
+<p>Each subcatchment was named based on a critera which are:</p>
+<p><code>Cheektowaga5</code>: inflow from outside sewer district (OSD) (<strong>1</strong> subcatchment)<br />
+<code>ECSD1</code>: inflow from outside sewer district (OSD) (<strong>1</strong> subcatchment)<br />
+<code>ECSD4</code>: inflow from outside sewer district (OSD) (<strong>1</strong> subcatchment)<br />
+<code>WSSD13</code>: inflow from outside sewer district (OSD) (<strong>1</strong> subcatchment)<br />
+<code>DetBasin</code>: detention basin (<strong>1</strong> subcatchment)<br />
+<code>PlantInf</code>: green infrastructure project (infiltration planters) (<strong>2</strong> subcatchments)<br />
+<code>RainGardens</code>: green infrastructure project (rain gardens) (<strong>8</strong> subcatchments)<br />
+<code>Buf1</code>: House Buffer Area (type 1, disconnected downspouts) (<strong>4830</strong> subcatchments)<br />
+<code>Buf2</code>: House Buffer Area (type 2, all other areas) (<strong>4846</strong> subcatchments)<br />
+<code>GLawn</code>: Lawn (<strong>3963</strong> subcatchments)<br />
+<code>HDC</code>: Roofs DC (<strong>4686</strong> subcatchments)<br />
+<code>HLawn</code>: Roofs to Lawn (<strong>4568</strong> subcatchments)<br />
+<code>HSplash</code>: Roofs Splashing (impervious component) and House Buffer Area Splashing (pervious component) (<strong>4690</strong> subcatchments)<br />
+<code>HStreet</code>: Roofs to Street (<strong>1747</strong> subcatchments)<br />
+<code>Hstreet</code>: Street (<strong>1397</strong> subcatchments)<br />
+<code>Lat</code>: Lateral Area (<strong>4689</strong> subcatchments)<br />
+<code>Main</code>:Mains Area (<strong>5102</strong> subcatchments)<br />
+<code>Parking</code>: Commercial Parking Lots (<strong>2681</strong> subcatchments)<br />
+<code>RCom</code>: Roos Commercial (<strong>3297</strong> subcatchments)<br />
+<code>SAimp</code>: impervious subarea (<strong>6374</strong> subcatchments)<br />
+<code>SAperv</code>: pervious subarea (<strong>6764</strong> subcatchments)</p>
+</div>
+<div id="outfall-analysis" class="section level3">
+<h3>Outfall Analysis</h3>
 </div>
 </div>
 <div id="binary-data" class="section level2">

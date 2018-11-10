@@ -22,7 +22,7 @@ The SWMM output would be made in two files. The first one is a report file (*".r
 The report file which would be used as a data set in this project, has been uploaded in [github](https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt). This file shows the SWMM output as a report file. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra","ggplot2"))
+# install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra","ggplot2"))
 
 library(dplyr)
 library(swmmr)
@@ -53,7 +53,7 @@ With the following lines of `R` code, the input file could be readable. The firs
 
 ```{r error=FALSE, message=FALSE, warning=FALSE}
 
-download.file("https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt", "Report_file.rpt")
+# download.file("https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt", "Report_file.rpt")
 
 report_file <- read_rpt ("Report_file.rpt")
 
@@ -203,7 +203,54 @@ for (i in 1:rpt_sub_ups_num)
 ```
 
 by looking at the the subcatchments's area, it could be realized that The first **`r rpt_sub_ups_num`** subcatchments' area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are:    
-**`r rpt_sub_ups_name[[1]]`,  `r rpt_sub_ups_name[[2]]`,  `r rpt_sub_ups_name[[3]]`,  `r rpt_sub_ups_name[[4]]`, and `r rpt_sub_ups_name[[5]]`**.   
+**`r rpt_sub_ups_name[[1]]`,  `r rpt_sub_ups_name[[2]]`,  `r rpt_sub_ups_name[[3]]`,  `r rpt_sub_ups_name[[4]]`, and `r rpt_sub_ups_name[[5]]`**. 
+
+Each subcatchment was named based on a critera which are:  
+``` {r echo=FALSE}
+rpt_sub_subname = matrix()
+rpt_sub_subname <- c("Cheektowaga5", "ECSD1", "ECSD4", "WSSD13", 
+                     "DetBasin", "PlantInf", "RainGardens", 
+                     "Buf1", "Buf2", "GLawn", "HDC", "HLawn",
+                     "HSplash", "HStreet", "Hstreet", "Lat",
+                     "Main", "Parking", "RCom", "SAimp", "SAperv")
+
+rpt_sub_run <- rpt_subcatchment_summary %>% arrange(desc(Area)) %>%
+  select(Subcatchment)
+# View(rpt_sub_run)
+
+rpt_sub_subname_num = matrix()
+for (i in 1: length(rpt_sub_subname)) {
+  rpt_sub_subname_num [i] <- rpt_sub_run %>% 
+          filter(grepl(rpt_sub_subname[i] ,Subcatchment)) %>% nrow
+}     
+
+rpt_sub_subname_num_to <- cbind(rpt_sub_subname, rpt_sub_subname_num)
+```
+
+`Cheektowaga5`: inflow from outside sewer district (OSD) (**`r rpt_sub_subname_num_to[1,2]`** subcatchment)     
+`ECSD1`: inflow from outside sewer district (OSD) (**`r rpt_sub_subname_num_to[2,2]`** subcatchment)     
+`ECSD4`: inflow from outside sewer district (OSD) (**`r rpt_sub_subname_num_to[3,2]`** subcatchment)       
+`WSSD13`: inflow from outside sewer district (OSD) (**`r rpt_sub_subname_num_to[4,2]`** subcatchment)         
+`DetBasin`: detention basin (**`r rpt_sub_subname_num_to[5,2]`** subcatchment)        
+`PlantInf`: green infrastructure project (infiltration planters) (**`r rpt_sub_subname_num_to[6,2]`** subcatchments)     
+`RainGardens`: green infrastructure project (rain gardens) (**`r rpt_sub_subname_num_to[7,2]`** subcatchments)    
+`Buf1`: House Buffer Area (type 1, disconnected downspouts) (**`r rpt_sub_subname_num_to[8,2]`** subcatchments)    
+`Buf2`: House Buffer Area (type 2, all other areas) (**`r rpt_sub_subname_num_to[9,2]`** subcatchments)  
+`GLawn`: Lawn (**`r rpt_sub_subname_num_to[10,2]`** subcatchments)     
+`HDC`: Roofs DC (**`r rpt_sub_subname_num_to[11,2]`** subcatchments)       
+`HLawn`: Roofs to Lawn (**`r rpt_sub_subname_num_to[12,2]`** subcatchments)       
+`HSplash`: Roofs Splashing (impervious component) and House Buffer Area Splashing (pervious component) (**`r rpt_sub_subname_num_to[13,2]`** subcatchments)    
+`HStreet`: Roofs to Street (**`r rpt_sub_subname_num_to[14,2]`** subcatchments)     
+`Hstreet`: Street (**`r rpt_sub_subname_num_to[15,2]`** subcatchments)    
+`Lat`: Lateral Area  (**`r rpt_sub_subname_num_to[16,2]`** subcatchments)    
+`Main`:Mains Area (**`r rpt_sub_subname_num_to[17,2]`** subcatchments)     
+`Parking`: Commercial Parking Lots (**`r rpt_sub_subname_num_to[18,2]`** subcatchments)      
+`RCom`: Roos Commercial (**`r rpt_sub_subname_num_to[19,2]`** subcatchments)     
+`SAimp`: impervious subarea (**`r rpt_sub_subname_num_to[20,2]`** subcatchments)   
+`SAperv`: pervious subarea (**`r rpt_sub_subname_num_to[21,2]`** subcatchments)
+
+### Outfall Analysis
+
 
 
 
