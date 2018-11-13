@@ -193,7 +193,7 @@ rpt_sub_Area_Vol_top <- rpt_sub_Area_Vol %>%
   filter(between(row_number(), 1, 15))
 # View (rpt_sub_Area_Vol_top)
 
-#....................................................................
+# The cumulative runoff ...................................................................
 rpt_subcatchment_summarize <- summarise (rpt_subcatchment_summary, 
                                          Sum_Runoff_Volume_MG = sum(Total_Runoff_Volume), 
                                          Sum_Runoff_Depth_inch = sum(Total_Runoff_Depth)

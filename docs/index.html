@@ -324,7 +324,7 @@ The SWMM output would be made in two files. The first one is a report file (<em>
 <h2>Report Data</h2>
 <p>The report file which would be used as a data set in this project, has been uploaded in <a href="https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt">github</a>. This file shows the SWMM output as a report file.</p>
 <p>With the following lines of <code>R</code> code, the input file could be readable. The first line, would download the data set from <a href="https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt">github</a>. I made this line as a comment. Because just for the first time it is needed to be downloaded. The rest of the time, the file is in the current folder and can be read easily. Therefore, it is not needed to download it again. For the users who want to run this model for the first time, they should run this line (remove the #)</p>
-<pre class="r"><code>download.file(&quot;https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt&quot;, &quot;Report_file.rpt&quot;)
+<pre class="r"><code># download.file(&quot;https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt&quot;, &quot;Report_file.rpt&quot;)
 
 report_file &lt;- read_rpt (&quot;Report_file.rpt&quot;)</code></pre>
 <p>The report file has different sections which are:</p>
