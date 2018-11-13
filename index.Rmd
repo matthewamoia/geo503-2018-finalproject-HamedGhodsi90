@@ -1,5 +1,5 @@
 ---
-title: "Final Project - First Draft"
+title: "Interpreting Stormwater management model (SWMM) Output"
 author: "Seyed Hamed Ghodsi (seyedham@buffalo.edu)"
 date: 'Deadline: November 9, 2018'
 output: html_document
@@ -73,9 +73,7 @@ The two most important sections, which have to be analyzed in the stormwater man
 ### Subcatchment analysis:
 
 ``` {r echo=FALSE}  
-#.................. ...subcatchment analysis..............................
-
-# subcatchment summary...........................................
+# 3.1 Subcatchment Summary preparation ...................................
 
 rpt_subcatchment_raw <- report_file $ subcatchment_summary                 # To load the subcatchment summary part
 
@@ -97,11 +95,18 @@ rpt_subcatchment_pre $ Perc_Imperv <- as.numeric(as.character(rpt_subcatchment_p
 rpt_subcatchment_pre $ Perc_Slope <- as.numeric(as.character(rpt_subcatchment_pre $ Perc_Slope))
 
 rpt_subcatchment <- rpt_subcatchment_pre  %>% arrange(desc(Area))
+# View (rpt_subcatchment_pre)
+# View (rpt_subcatchment)
 
 
-#Subcatchment Runoff summary........................................
+#3.2: Subcatchment Runoff prepareation ...................................
 
-rpt_Runoff_subcatchment_pre <- report_file $ subcatchment_runoff_summary %>% filter(between(row_number(), 1, 59655)) 
+rpt_Runoff_subcatchment_raw <- report_file $ subcatchment_runoff_summary 
+
+num_cor3  <- which(rpt_Runoff_subcatchment_raw $ Subcatchment == "***********************") 
+
+rpt_Runoff_subcatchment_pre <- report_file $ subcatchment_runoff_summary %>% filter(between(row_number(), 1, 59655))
+
 rpt_Runoff_subcatchment_pre $ Total_Precip <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Precip))
 rpt_Runoff_subcatchment_pre $ Total_Runon <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Runon))
 rpt_Runoff_subcatchment_pre $ Total_Evap <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Evap))
@@ -112,12 +117,13 @@ rpt_Runoff_subcatchment_pre $ Total_Peak_Runoff <- as.numeric(as.character(rpt_R
 rpt_Runoff_subcatchment_pre $ Total_Runoff_Coeff <- as.numeric(as.character(rpt_Runoff_subcatchment_pre $ Total_Runoff_Coeff))
 
 rpt_Runoff_subcatchment <- rpt_Runoff_subcatchment_pre %>% arrange (desc(Total_Runoff_Volume))
+# View(rpt_Runoff_subcatchment_raw)
+# View (rpt_Runoff_subcatchment)
 
 
-# Subcatchment Summarize.............................................
-
+#3.3: Subcatchment Summarize............................................................................
 rpt_subcatchment_summary <- rpt_subcatchment %>% 
-  mutate(Subcatchment=Name) %>% 
+  rename (Subcatchment=Name) %>% 
     select(Subcatchment, Area, Width, Perc_Imperv, Outlet) %>%
       inner_join(rpt_Runoff_subcatchment, by=c("Subcatchment")) %>% 
         mutate(
@@ -135,48 +141,57 @@ rpt_subcatchment_summary <- rpt_subcatchment %>%
                 Total_Runoff_Volume,Runoff_Volume_perc, Rank_Vol
                 ) %>%
             arrange(desc(Total_Runoff_Volume))
+# View (rpt_subcatchment_summary)
 
-#......................................................
-rpt_sub_Vol_Area <- rpt_subcatchment_summary  %>% 
-  mutate(
-         "Runoff Volume (MG)"= Total_Runoff_Volume,
-         "%" = Runoff_Volume_perc,
-         "Area (hec)" = Area,
-         "Rank Area" = Rank_Area
-         ) %>%
-    select(Subcatchment,"Runoff Volume (MG)","%","Area (hec)","Rank Area")
-      
+
+# 3.3.1: Sorting subcatchments based on total runoff volume .........................
+
+rpt_sub_Vol_Area <- rpt_subcatchment_summary %>% 
+  select(Subcatchment,Total_Runoff_Volume, Runoff_Volume_perc, Area, Rank_Area) %>%
+    rename(
+           "Runoff Volume (MG)"= Total_Runoff_Volume,
+           "%" = Runoff_Volume_perc,
+           "Area (hec)" = Area,
+           "Rank Area" = Rank_Area
+           )
+
 rpt_sub_Vol_Area_top <- rpt_sub_Vol_Area %>%
   filter(between(row_number(), 1, 15))
+# View(rpt_sub_Vol_Area_top)
 
-#.....................................................
+
+# 3.3.2: Sorting subcatchments based on total runoff depth .........................
+
 rpt_sub_Dep_Area <- rpt_subcatchment_summary  %>% 
-  mutate(
-         "Runoff Depth (inch)"= Total_Runoff_Depth,
-         "%" = Runoff_Depth_perc,
-         "Area (hec)" = Area,
-          "Rank Area" = Rank_Area
-         ) %>%
-    arrange(desc(Total_Runoff_Depth)) %>%
-      select(Subcatchment, "Runoff Depth (inch)","%","Area (hec)","Rank Area")
-       
+  arrange(desc(Total_Runoff_Depth)) %>% 
+    select(Subcatchment, Total_Runoff_Depth, Runoff_Depth_perc, Area, Rank_Area) %>%
+      rename (
+             "Runoff Depth (inch)"= Total_Runoff_Depth,
+              "%" = Runoff_Depth_perc,
+              "Area (hec)" = Area,
+              "Rank Area" = Rank_Area
+              ) 
+
 rpt_sub_Dep_Area_top <- rpt_sub_Dep_Area %>% 
   filter(between(row_number(), 1, 15))
+# View (rpt_sub_Dep_Area_top)
 
-#.....................................................
+
+# 3.3.3: Sorting subcatchments based on Area ........... .........................
+
 rpt_sub_Area_Vol <- rpt_subcatchment_summary  %>% 
-  mutate(
-    "Area (hec)" = Area,
-    "Area %" = Area_perc,
-    "Runoff Volume (MG)"= Total_Runoff_Volume,
-    "Vol %" = Runoff_Volume_perc,
-    "Rank Vol" = Rank_Vol
-  ) %>%
   arrange(desc(Area)) %>%
-    select(Subcatchment,"Area (hec)","Area %", "Runoff Volume (MG)","Vol %")
+    select(Subcatchment, Area, Area_perc, Total_Runoff_Volume, Runoff_Volume_perc) %>%
+      rename(
+             "Area (hec)" = Area,
+             "Area %" = Area_perc,
+             "Runoff Volume (MG)"= Total_Runoff_Volume,
+             "Vol %" = Runoff_Volume_perc
+             )
 
 rpt_sub_Area_Vol_top <- rpt_sub_Area_Vol %>%
   filter(between(row_number(), 1, 15))
+# View (rpt_sub_Area_Vol_top)
 
 #....................................................................
 rpt_subcatchment_summarize <- summarise (rpt_subcatchment_summary, 
@@ -204,20 +219,24 @@ grid.table(rpt_sub_Area_Vol_top, theme=tt3)
 
 Knowing the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (**LID**) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.  
 ``` {r echo=FALSE}
-#...................................................
-rpt_sub_ups <- rpt_subcatchment_summary %>%
-  filter (Area > 2000) %>% arrange(desc(Area))
-rpt_sub_ups_num <- nrow(rpt_sub_ups)
+
+# 3.4: Upstream subcatchments ..........................................................
+
+rpt_sub_ups <- rpt_subcatchment_summary %>% 
+  select(Subcatchment, Area) %>%
+    filter (Area > 2000) %>% arrange(desc(Area))
 rpt_sub_ups_name <- matrix()
-for (i in 1:rpt_sub_ups_num)
+for (i in 1:nrow(rpt_sub_ups))
   rpt_sub_ups_name[i] <- rpt_sub_ups[[i,1]]
 ```
 
-by looking at the the subcatchments's area, it could be realized that The first **`r rpt_sub_ups_num`** subcatchments' area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are:    
+by looking at the the subcatchments's area, it could be realized that The first **`r nrow(rpt_sub_ups)`** subcatchments' area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are:    
 **`r rpt_sub_ups_name[[1]]`,  `r rpt_sub_ups_name[[2]]`,  `r rpt_sub_ups_name[[3]]`,  `r rpt_sub_ups_name[[4]]`, and `r rpt_sub_ups_name[[5]]`**. 
 
 Each subcatchment was named based on a critera which are:  
 ``` {r echo=FALSE}
+# 3.5: subcatchments name Definition and number ..........................................
+
 rpt_sub_subname = matrix()
 rpt_sub_subname <- c("Cheektowaga5", "ECSD1", "ECSD4", "WSSD13", 
                      "DetBasin", "PlantInf", "RainGardens", 
@@ -256,9 +275,12 @@ rpt_sub_subname_num_to <- cbind(rpt_sub_subname, rpt_sub_subname_num)
 `Lat`: Lateral Area  (**`r rpt_sub_subname_num_to[16,2]`** subcatchments)    
 `Main`:Mains Area (**`r rpt_sub_subname_num_to[17,2]`** subcatchments)     
 `Parking`: Commercial Parking Lots (**`r rpt_sub_subname_num_to[18,2]`** subcatchments)      
-`RCom`: Roos Commercial (**`r rpt_sub_subname_num_to[19,2]`** subcatchments)     
+`RCom`: Roofs Commercial (**`r rpt_sub_subname_num_to[19,2]`** subcatchments)     
 `SAimp`: impervious subarea (**`r rpt_sub_subname_num_to[20,2]`** subcatchments)   
 `SAperv`: pervious subarea (**`r rpt_sub_subname_num_to[21,2]`** subcatchments)
+
+
+
 
 ### Outfall Analysis
 
