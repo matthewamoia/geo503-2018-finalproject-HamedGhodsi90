@@ -1,7 +1,7 @@
 ---
 title: "Final Project - First Draft"
 author: "Seyed Hamed Ghodsi (seyedham@buffalo.edu)"
-date: "Deadline: November 9, 2018"
+date: 'Deadline: November 9, 2018'
 output: html_document
 ---
 
@@ -22,7 +22,7 @@ The SWMM output would be made in two files. The first one is a report file (*".r
 The report file which would be used as a data set in this project, has been uploaded in [github](https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt). This file shows the SWMM output as a report file. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-# install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra","ggplot2"))
+#install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra","ggplot2"))
 
 library(dplyr)
 library(swmmr)
@@ -32,6 +32,7 @@ library(knitr)
 library(gridExtra)
 library(grid)
 library(ggplot2)
+library(readr)
 ```
 
 ``` {r echo = FALSE}
@@ -53,7 +54,7 @@ With the following lines of `R` code, the input file could be readable. The firs
 
 ```{r error=FALSE, message=FALSE, warning=FALSE}
 
-# download.file("https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt", "Report_file.rpt")
+download.file("https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt", "Report_file.rpt")
 
 report_file <- read_rpt ("Report_file.rpt")
 
@@ -76,11 +77,21 @@ The two most important sections, which have to be analyzed in the stormwater man
 
 # subcatchment summary...........................................
 
-rpt_subcatchment_pre <- report_file $ subcatchment_summary %>% filter(between(row_number(), 1, 59724))
-rpt_subcatchment_pre [9683,2] = 16324    ; rpt_subcatchment_pre [9683,3] = 1632400 ;
-rpt_subcatchment_pre [9683,4] = 20       ; rpt_subcatchment_pre [9683,5] = 1.65 ;
-rpt_subcatchment_pre [9683,6] = "1993TY" ; rpt_subcatchment_pre [9683,7] = "ECSD4_InfStor"
-rpt_subcatchment_pre $ Area <- as.numeric(as.character(rpt_subcatchment_pre $ Area))
+rpt_subcatchment_raw <- report_file $ subcatchment_summary                 # To load the subcatchment summary part
+
+num_cor  <- which(rpt_subcatchment_raw $ Name=="*******************")                             # To find a row number befor the LID part
+num_cor2 <- which(rpt_subcatchment_raw $ Rain_Gage != rpt_subcatchment_raw$Rain_Gage [1]) # To find a row number for the bug
+
+rpt_subcatchment_pre <- rpt_subcatchment_raw %>% filter(between(row_number(), 1, num_cor[1]-1))   # To remove the LID part from the end of the list
+
+rpt_subcatchment_pre [num_cor2[1],"Outlet"]  = rpt_subcatchment_pre [num_cor2[1],"Rain_Gage"];            # To fix a bug in the data (row number = num_cor2)
+rpt_subcatchment_pre [num_cor2[1],"Rain_Gage"]  = rpt_subcatchment_pre [num_cor2[1],"Perc_Slope"];
+rpt_subcatchment_pre [num_cor2[1],"Perc_Slope"]  = rpt_subcatchment_pre [num_cor2[1],"Perc_Imperv"];
+rpt_subcatchment_pre [num_cor2[1],"Perc_Imperv"]  = rpt_subcatchment_pre [num_cor2[1],"Width"];
+rpt_subcatchment_pre [num_cor2[1],"Width"]  = substr(rpt_subcatchment_pre $ Area[num_cor2[1]], 9,20)
+rpt_subcatchment_pre [num_cor2[1],"Area"]  = substr(rpt_subcatchment_pre $ Area[num_cor2[1]], 0,8)
+
+rpt_subcatchment_pre $ Area <- as.numeric(as.character(rpt_subcatchment_pre $ Area))                      # To change the character to number
 rpt_subcatchment_pre $ Width <- as.numeric(as.character(rpt_subcatchment_pre $ Width))
 rpt_subcatchment_pre $ Perc_Imperv <- as.numeric(as.character(rpt_subcatchment_pre $ Perc_Imperv))
 rpt_subcatchment_pre $ Perc_Slope <- as.numeric(as.character(rpt_subcatchment_pre $ Perc_Slope))
