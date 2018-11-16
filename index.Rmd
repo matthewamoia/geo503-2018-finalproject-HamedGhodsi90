@@ -22,7 +22,7 @@ The SWMM output would be made in two files. The first one is a report file (*".r
 The report file which would be used as a data set in this project, has been uploaded in [github](https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt). This file shows the SWMM output as a report file. 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-#install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra","ggplot2"))
+#install.packages(c("dplyr", "swmmr", "devtools", "knitr","purrr", "gridExtra","ggplot2", "doParallel", "DT"))
 
 library(dplyr)
 library(swmmr)
@@ -33,6 +33,11 @@ library(gridExtra)
 library(grid)
 library(ggplot2)
 library(readr)
+library(ggmap)
+library(htmlwidgets)
+library(widgetframe)
+library(DT)
+
 ```
 
 ``` {r echo = FALSE}
@@ -54,25 +59,26 @@ With the following lines of `R` code, the input file could be readable. The firs
 
 ```{r error=FALSE, message=FALSE, warning=FALSE}
 
-download.file("https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt", "Report_file.rpt")
+# download.file("https://raw.githubusercontent.com/AdamWilsonLabEDU/geo503-2018-finalproject-HamedGhodsi90/master/data/SWMMReportFile.rpt", "Report_file.rpt")
 
 report_file <- read_rpt ("Report_file.rpt")
 
 ```
 
-The report file has different sections which are:
-
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE}
 
-grid.table(matrix(names(report_file[1:15]), nrow = 5), theme=tt3) 
+# grid.table(matrix(names(report_file[1:15]), nrow = 5), theme=tt3) 
+rpt_sec <- names(report_file)
 
 ```
+The report file has different sections which are: **`r rpt_sec[1]`, `r rpt_sec[2]`, `r rpt_sec[3]`, `r rpt_sec[4]`, `r rpt_sec[5]`, `r rpt_sec[6]`, `r rpt_sec[7]`, `r rpt_sec[8]`, `r rpt_sec[9]`, `r rpt_sec[10]`, `r rpt_sec[11]`, `r rpt_sec[12]`, `r rpt_sec[13]`, `r rpt_sec[14]`, `r rpt_sec[15]`, `r rpt_sec[16]`, `r rpt_sec[17]`**    
+
 
 The two most important sections, which have to be analyzed in the stormwater management process, are subcatchments and outfalls. 
 
 ### Subcatchment analysis:
 
-``` {r echo=FALSE}  
+``` {r }  
 # 3.1 Subcatchment Summary preparation ...................................
 
 rpt_subcatchment_raw <- report_file $ subcatchment_summary                 # To load the subcatchment summary part
@@ -144,6 +150,32 @@ rpt_subcatchment_summary <- rpt_subcatchment %>%
 # View (rpt_subcatchment_summary)
 
 
+rpt_subcatchment_summary_table <- rpt_subcatchment_summary %>%
+    select (
+            Subcatchment, 
+            Total_Runoff_Volume, Runoff_Volume_perc, Rank_Vol,
+            Area, Area_perc, Rank_Area,
+            Total_Runoff_Depth, Runoff_Depth_perc, Rank_Dep
+            ) %>%
+        rename( 
+         "Runoff Volume (MG)" = Total_Runoff_Volume,
+         "Runoff Volume (%)"= Runoff_Volume_perc,
+         "Runoff Volume (rank)" = Rank_Vol,
+         "Area (hec)" = Area,
+         "Area (%)" = Area_perc,
+         "Area (rank)" = Rank_Area,
+         "Runoff Depth (inch)"= Total_Runoff_Depth,
+         "Runoff Depth (%)" = Runoff_Depth_perc,
+         "Runoff Depth (rank)" = Rank_Dep
+         ) %>%
+            filter(between(row_number(), 1, 50))
+
+# View(rpt_subcatchment_summary_table)
+
+rpt_subcatchment_summary_table_show <- datatable(rpt_subcatchment_summary_table, options = list(pageLength = 10))
+# rpt_subcatchment_summary_table_show
+
+
 # 3.3.1: Sorting subcatchments based on total runoff volume .........................
 
 rpt_sub_Vol_Area <- rpt_subcatchment_summary %>% 
@@ -156,7 +188,7 @@ rpt_sub_Vol_Area <- rpt_subcatchment_summary %>%
            )
 
 rpt_sub_Vol_Area_top <- rpt_sub_Vol_Area %>%
-  filter(between(row_number(), 1, 15))
+  filter(between(row_number(), 1, 4))
 # View(rpt_sub_Vol_Area_top)
 
 
@@ -173,7 +205,7 @@ rpt_sub_Dep_Area <- rpt_subcatchment_summary  %>%
               ) 
 
 rpt_sub_Dep_Area_top <- rpt_sub_Dep_Area %>% 
-  filter(between(row_number(), 1, 15))
+  filter(between(row_number(), 1, 4))
 # View (rpt_sub_Dep_Area_top)
 
 
@@ -190,7 +222,7 @@ rpt_sub_Area_Vol <- rpt_subcatchment_summary  %>%
              )
 
 rpt_sub_Area_Vol_top <- rpt_sub_Area_Vol %>%
-  filter(between(row_number(), 1, 15))
+  filter(between(row_number(), 1, 4))
 # View (rpt_sub_Area_Vol_top)
 
 # The cumulative runoff ...................................................................
@@ -201,24 +233,29 @@ rpt_subcatchment_summarize <- summarise (rpt_subcatchment_summary,
 
 ```
 
-Number of subcatchments in the watershed: **`r nrow(rpt_Runoff_subcatchment)`**    
-The subcatchments have been arranged based on total runoff volume, total runoff depth, and area which the top ones are shown in the following tables.  
+There are **`r nrow(rpt_Runoff_subcatchment)`** subcatchments in the watershed. The subcatchments have been arranged based on total runoff volume, total runoff depth, and area which the top ones are shown in the following tables.  
 
-``` {r echo = FALSE} 
-# To plot the tables ..............................................
-# grid.arrange(tableGrob(rpt_sub_top_Vol_Area, theme=tt3),
-#              tableGrob(rpt_sub_top_Dep, theme=tt3))
-grid.table(rpt_sub_Vol_Area_top, theme=tt3)  
+``` {r } 
+# plot the tables ..............................................
+rpt_subcatchment_summary_table_show <- datatable(rpt_subcatchment_summary_table, options = list(pageLength = 10))
+
+rpt_subcatchment_summary_table_show
 ```
-``` {r echo = FALSE} 
-grid.table(rpt_sub_Dep_Area_top, theme=tt3)  
-```
-``` {r echo = FALSE}
-grid.table(rpt_sub_Area_Vol_top, theme=tt3)
+
+``` {r}
+# grid.table(rpt_sub_Vol_Area_top, theme=tt3) 
+# grid.table(rpt_sub_Dep_Area_top, theme=tt3)
+# grid.table(rpt_sub_Area_Vol_top, theme=tt3)
+grid.arrange(
+             tableGrob(rpt_sub_Vol_Area_top, theme=tt3),
+             tableGrob(rpt_sub_Dep_Area_top, theme=tt3),
+             tableGrob(rpt_sub_Area_Vol_top, theme=tt3)
+             )
+
 ```
 
 Knowing the subcatchments with the high value of total runoff and total depth would help the managers to understand the watershed in a better way. For example in order to decrease the runoff volume, low impact developments (**LID**) could be utilized. TO implement the LIDs, these selected subcatchments could have more priority.  
-``` {r echo=FALSE}
+``` {r echo = FALSE}
 
 # 3.4: Upstream subcatchments ..........................................................
 
@@ -233,8 +270,8 @@ for (i in 1:nrow(rpt_sub_ups))
 by looking at the the subcatchments's area, it could be realized that The first **`r nrow(rpt_sub_ups)`** subcatchments' area are much higher than the rest ones. These subcatchments are the watershed upsream areas, which act as boudary conditions. These subcatchments are:    
 **`r rpt_sub_ups_name[[1]]`,  `r rpt_sub_ups_name[[2]]`,  `r rpt_sub_ups_name[[3]]`,  `r rpt_sub_ups_name[[4]]`, and `r rpt_sub_ups_name[[5]]`**. 
 
-Each subcatchment was named based on a critera which are:  
-``` {r echo=FALSE}
+Each subcatchment was named based on critera which are:  
+``` {r }
 # 3.5: subcatchments name Definition and number ..........................................
 
 rpt_sub_subname = matrix()
@@ -264,30 +301,123 @@ rpt_sub_subname_num_to <- cbind(rpt_sub_subname, rpt_sub_subname_num)
 `DetBasin`: detention basin (**`r rpt_sub_subname_num_to[5,2]`** subcatchment)        
 `PlantInf`: green infrastructure project (infiltration planters) (**`r rpt_sub_subname_num_to[6,2]`** subcatchments)     
 `RainGardens`: green infrastructure project (rain gardens) (**`r rpt_sub_subname_num_to[7,2]`** subcatchments)    
-`Buf1`: House Buffer Area (type 1, disconnected downspouts) (**`r rpt_sub_subname_num_to[8,2]`** subcatchments)    
-`Buf2`: House Buffer Area (type 2, all other areas) (**`r rpt_sub_subname_num_to[9,2]`** subcatchments)  
-`GLawn`: Lawn (**`r rpt_sub_subname_num_to[10,2]`** subcatchments)     
-`HDC`: Roofs DC (**`r rpt_sub_subname_num_to[11,2]`** subcatchments)       
-`HLawn`: Roofs to Lawn (**`r rpt_sub_subname_num_to[12,2]`** subcatchments)       
-`HSplash`: Roofs Splashing (impervious component) and House Buffer Area Splashing (pervious component) (**`r rpt_sub_subname_num_to[13,2]`** subcatchments)    
-`HStreet`: Roofs to Street (**`r rpt_sub_subname_num_to[14,2]`** subcatchments)     
-`Hstreet`: Street (**`r rpt_sub_subname_num_to[15,2]`** subcatchments)    
-`Lat`: Lateral Area  (**`r rpt_sub_subname_num_to[16,2]`** subcatchments)    
-`Main`:Mains Area (**`r rpt_sub_subname_num_to[17,2]`** subcatchments)     
-`Parking`: Commercial Parking Lots (**`r rpt_sub_subname_num_to[18,2]`** subcatchments)      
-`RCom`: Roofs Commercial (**`r rpt_sub_subname_num_to[19,2]`** subcatchments)     
-`SAimp`: impervious subarea (**`r rpt_sub_subname_num_to[20,2]`** subcatchments)   
-`SAperv`: pervious subarea (**`r rpt_sub_subname_num_to[21,2]`** subcatchments)
+`Buf1`: Buffer Area for homes with disconnected downspouts that “splash” within 6’ of the house (**`r rpt_sub_subname_num_to[8,2]`** subcatchments)    
+`Buf2`: Buffer Area for all other homes (**`r rpt_sub_subname_num_to[9,2]`** subcatchments)  
+`GLawn`: Garages (**`r rpt_sub_subname_num_to[10,2]`** subcatchments)     
+`HDC`: Directly Connected/Unknown Connection Roofs (**`r rpt_sub_subname_num_to[11,2]`** subcatchments)       
+`HLawn`: Roofs with disconnected downspouts that “splash” beyond 6 ft from the house (**`r rpt_sub_subname_num_to[12,2]`** subcatchments)       
+`HSplash`: Roofs with disconnected downspouts that “splash” within 6 ft of the house (**`r rpt_sub_subname_num_to[13,2]`** subcatchments)    
+`HStreet`: Roofs whose runoff routes to the street (**`r rpt_sub_subname_num_to[14,2]`** subcatchments)     
+`Hstreet`: Roofs whose runoff routes to the street (**`r rpt_sub_subname_num_to[15,2]`** subcatchments)    
+`Lat`: Buffer Area around house laterals  (**`r rpt_sub_subname_num_to[16,2]`** subcatchments)    
+`Main`:Buffer Area around sewers lying under pervious surfaces (**`r rpt_sub_subname_num_to[17,2]`** subcatchments)     
+`Parking`: Parking Lots (**`r rpt_sub_subname_num_to[18,2]`** subcatchments)      
+`RCom`: Commercial Roofs (**`r rpt_sub_subname_num_to[19,2]`** subcatchments)     
+`SAimp`: Streets (**`r rpt_sub_subname_num_to[20,2]`** subcatchments)   
+`SAperv`: Lawns (**`r rpt_sub_subname_num_to[21,2]`** subcatchments)    
 
 
 
+In the following table, the characteristic of each type of subcatchment is shown.
+
+``` {r }
+# 3.1.5.1: subcatchment sub-name analysis ....................................
+
+rpt_sub_name_analysis <- rpt_subcatchment %>% 
+  rename (Subcatchment=Name) %>% 
+  inner_join(rpt_Runoff_subcatchment, by=c("Subcatchment")) %>% 
+  select(Subcatchment, Area, Width, Perc_Imperv, Perc_Slope)
+# View(rpt_sub_name_analysis)
+
+rpt_sub_name_summarize_table = data.frame()
+rpt_sub_name_summarize = data.frame()
+for (i in 1:length(rpt_sub_subname)) {
+  rpt_sub_name_summarize  <- rpt_sub_name_analysis %>%
+    filter(grepl(rpt_sub_subname[i] ,Subcatchment)) %>%
+      summarize (
+                 "name" = rpt_sub_subname[i],
+                 "number of subcatchments" = length(Subcatchment),
+                 "min area (hec)" = min(Area),
+                 "max area (hec)" = max(Area),
+                 "average area (hec)" = mean(Area),
+                 "min impervious (%)" = min(Perc_Imperv),
+                 "max impervious (%)" = max(Perc_Imperv),
+                 "average impervious (%)" = mean(Perc_Imperv),                             "min width (hec)" = min(Width),
+                 "max width (hec)" = max(Width),
+                 "average width (hec)" = mean(Width),
+                 "min slope (%)" = min(Perc_Slope),
+                 "max slope (%)" = max(Perc_Slope),
+                 "average slope (%)" = mean(Perc_Slope)             
+                 )
+  rpt_sub_name_summarize_table <- rbind(rpt_sub_name_summarize_table, rpt_sub_name_summarize)
+}
+
+rpt_sub_name_summarize_table_show <- datatable(rpt_sub_name_summarize_table, options = list(pageLength = length(rpt_sub_subname)/3))
+
+# View(rpt_sub_name_summarize_table)
+rpt_sub_name_summarize_table_show
+
+```
 
 ### Outfall Analysis
 
+``` {r Outfall_Analysis}
+# ..................................... 3.2: Outfall part ............................................
 
 
+rpt_outfall_pre <- report_file $ outfall_loading_summary
+# View(rpt_outfall_pre)
+
+rpt_outfall <- rpt_outfall_pre %>%
+                 rename(
+                        na = Outfall_Node,
+                        Outfall_Node = Flow_Freq, 
+                        Flow_Freq_Pcnt = Avg_Flow, 
+                        Avg_Flow_MGD = Max_Flow, 
+                        Max_Flow_MGD = Total_Volume, 
+                        Total_Volume_MG = Total_
+                       ) %>%
+                    select(-na)
+  
+# View(rpt_outfall)
 
 
+rpt_Outfall_arrange <- rpt_outfall %>% arrange(desc(Total_Volume_MG)) %>% 
+    mutate (Percentage_Vol = percent_Function ((Total_Volume_MG / Total_Volume_MG[1])))
+# View (rpt_Outfall_arrange)
+
+rpt_cso <- rpt_outfall %>% filter(Outfall_Node != "System" & Outfall_Node !="WWTPGRIT") %>% 
+  mutate ( Percentage_Vol = percent_Function(Total_Volume_MG/sum(Total_Volume_MG))) %>%
+    arrange (desc(Total_Volume_MG))
+# View (rpt_cso)
+
+rpt_cso_table <- rpt_cso %>%
+  rename (
+          Outfall = Outfall_Node,
+          "Flow frequency (%)" = Flow_Freq_Pcnt,
+          "Average flow (MGD)" = Avg_Flow_MGD,
+          "Maximum flow (MGD)" = Max_Flow_MGD,
+          "Total volume (MG)" = Total_Volume_MG,
+          "Total volume (%)" = Percentage_Vol
+          )
+# View(rpt_cso_table)
+
+rpt_cso_top4_pcnt <- percent_Function( sum(rpt_cso_table$`Total volume (MG)`[1:4]) / sum(rpt_cso_table$`Total volume (MG)`))
+
+```
+
+A combined sewer system (CSS) collects rainwater runoff, domestic sewage, and industrial wastewater into one pipe. Under normal conditions, it transports all of the wastewater it collects to a sewage treatment plant for treatment, then discharges to a water body. The volume of wastewater can sometimes exceed the capacity of the CSS or treatment plant (e.g., during heavy rainfall events or snowmelt). When this occurs, untreated stormwater and wastewater, discharges directly to nearby streams, rivers, and other water bodies.   
+Combined sewer overflows (**CSOs**) contain untreated or partially treated human and industrial waste, toxic materials, and debris as well as stormwater. They are a priority water pollution concern for the nearly 860 municipalities across the U.S. that have CSSs [1].
+
+In the current project, there are **`r nrow(rpt_cso)` outfalls** in the watershed in which **CSOs** can be happened.
+In the following table, flow frequency, average and maximum flow, and total volume of each outfall are shown.  
+
+``` {r Outfall_table}
+rpt_cso_table_show <- datatable(rpt_cso_table, options = list(pageLength = 10))
+rpt_cso_table_show
+
+```
+from this table, it can be concluded that the outfalls **`r rpt_cso_table[[1,1]]`, `r rpt_cso_table[[2,1]]`, `r rpt_cso_table[[3,1]]`**, and **`r rpt_cso_table[[4,1]]`** with **`r rpt_cso_top4_pcnt` ** of the total volume, are the most critical outfalls based on the CSOs.
 
 
 
@@ -331,6 +461,7 @@ rpt_sub_subname_num_to <- cbind(rpt_sub_subname, rpt_sub_subname_num)
 
 # References
 
+[1] https://www.epa.gov/npdes/combined-sewer-overflows-csos
 
 
 
@@ -342,80 +473,4 @@ rpt_sub_subname_num_to <- cbind(rpt_sub_subname, rpt_sub_subname_num)
 
 
 
-
-
-
-<!-- # Materials and methods -->
-
-<!-- Narrative and most code will go here.  Describe what you are doing and show how to do it (with code). -->
-
-<!-- You can do bullets like this: -->
-
-<!-- * The first most important thing -->
-<!-- * The second most important thing -->
-<!-- * The third most important thing -->
-
-<!-- You can do numbers like this: -->
-
-<!-- 1. The first most important thing -->
-<!-- 2. The second most important thing -->
-<!-- 3. The third most important thing -->
-
-<!-- See [http://rmarkdown.rstudio.com/](http://rmarkdown.rstudio.com/) for all the amazing things you can do. -->
-
-
-<!-- Here's my first code chunk. -->
-<!-- ```{r} -->
-<!-- 1+2 -->
-<!-- ``` -->
-
-<!-- Load any required packages in a code chunk (you may need to install some packages): -->
-
-<!-- ```{r, message=F, warning=F} -->
-<!-- library(dplyr) -->
-<!-- library(ggplot2) -->
-<!-- library(maps) -->
-<!-- library(spocc) -->
-<!-- knitr::opts_chunk$set(cache=TRUE)  # cache the results for quick compiling -->
-<!-- ``` -->
-
-
-<!-- We are going to use the `occ()` function to download _occurrence_ records for the American robin (_Turdus migratorius_) from the [Global Biodiversity Information Facility](gbif.org). -->
-
-<!-- <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/Turdus-migratorius-002.jpg" alt="alt text" width="200"> -->
-<!-- <small><small><small>Licensed under CC BY-SA 3.0 via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Turdus-migratorius-002.jpg#/media/File:Turdus-migratorius-002.jpg)</small></small></small> -->
-
-<!-- ```{r, warning=F}  -->
-<!-- ## define which species to query -->
-<!-- sp='Turdus migratorius' -->
-
-<!-- ## run the query and convert to data.frame() -->
-<!-- d = occ(query=sp, from='ebird',limit = 100) %>% occ2df() -->
-<!-- ``` -->
-<!-- This can take a few seconds. -->
-
-<!-- ```{r, fig.width=6, fig.height=3, fig.cap="Map illustrating the known occurrence locations"} -->
-<!-- # Load coastline -->
-<!-- map=map_data("world") -->
-
-<!-- ggplot(d,aes(x=longitude,y=latitude))+ -->
-<!--   geom_polygon(aes(x=long,y=lat,group=group),data=map)+ -->
-<!--   geom_point(col="red")+ -->
-<!--   coord_equal() -->
-<!-- ``` -->
-
-
-<!-- # Results -->
-
-<!-- Show tables, plots, etc. and describe them. -->
-
-<!-- ```{r} -->
-<!-- hist(d$latitude) -->
-<!-- ``` -->
-
-<!-- # Conclusions -->
-
-<!-- What have you learned?  Are there any broader implications? -->
-
-<!-- # References -->
 
